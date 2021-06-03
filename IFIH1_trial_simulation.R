@@ -28,7 +28,7 @@ death.dexa.TT = parameters(asymptote=a_TT_dexa, hr=c)
 
 # Sample size parameters
 sample.size.total = c(6000)
-TT_prop<-seq(0.13, 0.61, 0.16)^2
+TT_prop<-c( 0.13, 0.30, 0.47, 0.53, 0.61)^2 
 sample.size.placebo.Cx = as.list(as.integer((1-TT_prop)/2 * sample.size.total))
 sample.size.placebo.TT = as.list(as.integer(TT_prop/2 * sample.size.total))
 sample.size.dexa.Cx = as.list(as.integer((1-TT_prop)/2 * sample.size.total))
@@ -188,10 +188,13 @@ HR_table$uci<-HR_table$result*exp(2*HR_table$SE)
 ggplot(HR_table[HR_table$test.statistic=="HR No steroids population",], aes(x=MAF, y=result, ymin=lci, ymax=uci, col=test.statistic))+
   geom_hline(yintercept=1, linetype=2)+
   geom_pointrange(position=position_dodge2(width=0.05), size=1, col="black")+
-  scale_x_continuous(breaks=sqrt(TT_prop))+
+  scale_x_continuous(breaks=round(HR_table$MAF,2))+
   labs(y="Hazard Ratio (TT vs CC/CT)", x="Minor allele frequency")+
   theme_light(base_size = 24)+
-  theme(legend.position="none", aspect.ratio=1.618)
+  theme(legend.position="none", 
+        aspect.ratio=1.618, 
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(angle=45, hjust=1))
   
 HR_table$test.statistic<-factor(HR_table$test.statistic, levels=c("HR No steroids population", "HR Cx population", "HR TT population", "HR Overall population"))
 ggplot(HR_table[HR_table$test.statistic!="HR No steroids population",], aes(x=MAF, y=result, ymin=lci, ymax=uci, col=test.statistic))+
@@ -200,7 +203,7 @@ ggplot(HR_table[HR_table$test.statistic!="HR No steroids population",], aes(x=MA
   scale_x_continuous(breaks=sqrt(TT_prop))+
   labs(y="Hazard Ratio (Dexamethasone vs std care)", x="Minor allele frequency")+
   theme_light(base_size = 24)+
-  theme(legend.position="none", aspect.ratio=1/1.618)+
+  theme(legend.position="none", aspect.ratio=1/1.618^2)+
   scale_color_manual(values=c("#BC3C29FF","#0072B5FF", "black"))+
   scale_y_log10()
 
@@ -232,7 +235,7 @@ survdiff(surv.obj~group, data=trial)
 
 # Sample size parameters
 sample.size.total = c(6000)
-TT_prop<-c(0.13^2, 0.4^2, 0.5^2, 0.6^2)
+TT_prop<-c( 0.13, 0.47, 0.53, 0.61)^2 
 
 sample.size.placebo.Cx = as.list(as.integer((1-TT_prop)/2 * sample.size.total))
 sample.size.placebo.TT = as.list(as.integer(TT_prop/2 * sample.size.total))
@@ -248,10 +251,12 @@ trial_steroids_1<-as.data.frame(rbind(Cx[[1]], Cx_st[[1]], TT[[1]], TT_st[[1]]))
 trial_steroids_2<-as.data.frame(rbind(Cx[[2]], Cx_st[[2]], TT[[2]], TT_st[[2]]))
 trial_steroids_3<-as.data.frame(rbind(Cx[[3]], Cx_st[[3]], TT[[3]], TT_st[[3]]))
 trial_steroids_4<-as.data.frame(rbind(Cx[[4]], Cx_st[[4]], TT[[4]], TT_st[[4]]))
+
 trial_steroids_1$MAF<-TT_prop[[1]]
 trial_steroids_2$MAF<-TT_prop[[2]]
 trial_steroids_3$MAF<-TT_prop[[3]]
 trial_steroids_4$MAF<-TT_prop[[4]]
+
 trial_steroids<-rbind(trial_steroids_1, trial_steroids_2, trial_steroids_3, trial_steroids_4)
 trial_steroids$status<-1
 colnames(trial_steroids)<-c("fu_time", "group", "variant", "MAF", "status")
@@ -275,8 +280,10 @@ chunk_surv<-function(x, y) {
 }
 
 effects_steroids<-by(trial_steroids, trial_steroids$MAF, FUN=function(x) chunk_surv(x, "group"))
+effects_steroids[[1]]
+effects_steroids[[2]]
+effects_steroids[[3]]
 effects_steroids[[4]]
-ggsave("sim_surv_21_4.pdf")
 
 # Get the data generated in the CSE (beware!, large object)
 IFIH1.data.stack = DataStack(data.model = IFIH1.data.model,
